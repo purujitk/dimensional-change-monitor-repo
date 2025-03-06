@@ -2,39 +2,29 @@
 
 
 WiFiClient client;
+NTPClient timeClient;
 
 void setup() {
+  
+  int prev_time;
+  int now_time;
 
   pinMode(2,OUTPUT);
 
-  //SERIAL MONITOR INITIZALIZATION
   Serial.begin(115200);
   Serial.println("ESP32 is initialized");
 
-
-  /////////Wifi initialization////////////
-  wifiinit(ssid, password);
+  wifiinit();
   
-  ////////////////////////////////////////
-
-  ThingSpeak.begin(client); //initializing thingspeak
-  int status = ThingSpeak.writeField(channel_id, 1, "hello", w_api_key);
-
-  if (status == 200){
-    Serial.println("Transmission succesful...");
-  } else {
-    Serial.println("Not Connected...");
-  }
-
+  ThingSpeak.begin(client);
 
 }
 
 void loop() {
 
-  while(WiFi.status() != WL_CONNECTED){
-    Serial.println("Wifi disconnected....");
-    WiFi.reconnect();
+  updatetime()
+  now_time = timeClient.getepochtime()
 
+  if(now_time-past_time >= INTERVAL){
+    ;// read sensor value
   }
-
-}
