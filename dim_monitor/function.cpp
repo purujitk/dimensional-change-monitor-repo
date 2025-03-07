@@ -71,9 +71,8 @@ void logToSD(float strain) {
 
   File file = SD.open("/strainlog.csv", FILE_APPEND);
 
-
   if (file) {
-    file.print(timeClient.getFormattedDate()); // e.g., 2025-03-05T12:00:00Z
+    // file.print(timeClient.getFormattedDate()); // e.g., 2025-03-05T12:00:00Z
     file.print(",");
     file.print(strain, 2);
     file.close();
@@ -85,7 +84,7 @@ void logToSD(float strain) {
 
 /////////////HX711 initialization////////////////
 
-void hx711_init(){
+void HX711_init(){
 
   scale.begin(DATA_LINE,CLOCK_LINE);
   scale.set_scale();
@@ -103,25 +102,15 @@ void hx711_init(){
 float get_deformation(int dim){
 
   switch (dim){
-    case 1: return (float) scale.get_units() * INITIAL_LENGTH_LONG * 0.000001;
+    case 1: return (float) scale.get_units() * INITIAL_LENGTH_LONG * (0.000001);
 
-    case 2: return (float) scale.get_units() * INITIAL_LENGTH_RAD * 0.000001;
+    case 2: return (float) scale.get_units() * INITIAL_LENGTH_RAD * (0.000001);
 
-    case 3: return (float) scale.get_units() *INITIAL_LENGTH_RAD * 0.000001;
+    case 3: return (float) scale.get_units() * INITIAL_LENGTH_RAD * (0.000001);
 
-    else: return 0;
+    default: return 0;
     
   }
 
 }
 
-
-
-
-
-
-
-
-
-
-}

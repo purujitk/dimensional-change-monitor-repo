@@ -14,17 +14,25 @@ by: Purujit Kantiya
 #include <SD.h>
 #include <NTPClient.h> //for date time stamps
 #include <HX711.h> //HX711 by bogdan
+#include <WiFiUdp.h>
 
 ////////////WIFI PARAMATERS//////////////
-#define WIFI_SSD "Ludacris-5G"
-#define WIFI_PASS "#Stanley2025!"
+#define WIFI_SSD "Purujit's iPhone" //change depending on wifi client
+#define WIFI_PASS "PurujitK"
+// #define WIFI_SSD "Ludacris-5G" //change depending on wifi client
+// #define WIFI_PASS "#Stanley2025!"
 
-extern wifiClient client;
+extern WiFiClient client;
+extern WiFiUDP ntpUDP;
 
 // ////////////THINGSPEAK DATA/////////////
-#define W_API_KEY "LG11PSUFXN66T3DA"
-#define R_API_KEY "EMTZQ7KAPR04KHKB"
-#define CHANNEL_ID "2865189"
+extern const char* W_API_KEY;
+extern const char* R_API_KEY;
+extern unsigned long CHANNEL_ID;
+// #define W_API_KEY "LG11PSUFXN66T3DA"
+// #define R_API_KEY "EMTZQ7KAPR04KHKB"
+// #define CHANNEL_ID "2865189"
+
 #define SERVER "api.thingspeak.com"
 
 #define API_FAIL 404
@@ -42,23 +50,25 @@ extern wifiClient client;
 #define NTP_SERVER "pool.ntp.org"
 extern NTPClient timeClient;
 
-#define INTERVAL 15*60;
+#define INTERVAL 900
 
 
 ///////////HX711 PIN ASSIGNMENTS//////////////
 
-#define CLOCK_LINE 4;
-#define DATA_LINE 16;
+#define CLOCK_LINE 4
+#define DATA_LINE 16
 
 extern HX711 scale;
 
-#define CALIBRATION_FACTOR;
+#define CALIBRATION_FACTOR
 
 ////////////DIMENSIONAL DATA////////////////
 
-#define INITIAL_LENGTH_LONG; //or x,y,z not sure
-#define INITIAL_LENGTH_RAD;
-#define INITIAL_LENGTH_TANG;
+//THIS DATA WAS RECORDED UNDER STAP
+
+const float INITIAL_LENGTH_LONG = 0; //or x,y,z not sure
+const float INITIAL_LENGTH_RAD = 0;
+const float INITIAL_LENGTH_TANG = 0;
 
 
 ///////////function initialization////////////
@@ -68,7 +78,7 @@ void thingspeaktransmit(int sensordata);
 void logToSD(float strain); // Updated to include status
 void sdInit();
 void HX711_init();
-void readStrain();
+float get_deformation(int dim);
 
 
 #endif

@@ -10,28 +10,28 @@ STRAIN CANNOT EXCEED 2000 MICROSTRAIN
 */
 
 
-#include <function.h>
+// #include <function.h>
 
-float hx711_init(){
+// float hx711_init(){
 
-  scale.begin(DATA_LINE,CLOCK_LINE);
-  scale.set_scale();
-  scale.tare();
+//   scale.begin(DATA_LINE,CLOCK_LINE);
+//   scale.set_scale();
+//   scale.tare();
 
-  //place know weight (ie 2kg or sum) within 10 seconds
-  delay(10000);
+//   //place know weight (ie 2kg or sum) within 10 seconds
+//   delay(10000);
 
-  float known_strain = SOMEVALUE; // calculated using 
-  long exp_strain = scale.get_value(10); //from HX711
+//   float known_strain = 0; // calculated using 
+//   long exp_strain = scale.get_value(10); //from HX711
 
-  return (float) exp_strain/known_strain;
+//   return (float) exp_strain/known_strain;
+// }
 
+// void setup(){
 
-void setup(){
-  
-  Serial.begin(115200);
+//   Serial.begin(115200);
 
-  Serial.prinln(hx711_init()); //NOTE THIS VALUE!!
+//   Serial.prinln(hx711_init()); //NOTE THIS VALUE!!
 
+  // }
 
-}
