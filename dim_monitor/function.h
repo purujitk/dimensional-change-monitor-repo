@@ -13,6 +13,7 @@ by: Purujit Kantiya
 #include <SPI.h>
 #include <SD.h>
 #include <NTPClient.h> //for date time stamps
+#include <HX711.h> //HX711 by bogdan
 
 ////////////WIFI PARAMATERS//////////////
 #define WIFI_SSD "Ludacris-5G"
@@ -43,13 +44,32 @@ extern NTPClient timeClient;
 
 #define INTERVAL 15*60;
 
+
+///////////HX711 PIN ASSIGNMENTS//////////////
+
+#define CLOCK_LINE 4;
+#define DATA_LINE 16;
+
+extern HX711 scale;
+
+#define CALIBRATION_FACTOR;
+
+////////////DIMENSIONAL DATA////////////////
+
+#define INITIAL_LENGTH_LONG; //or x,y,z not sure
+#define INITIAL_LENGTH_RAD;
+#define INITIAL_LENGTH_TANG;
+
+
 ///////////function initialization////////////
 
 void wifiinit(); //wifi initialization 
 void thingspeaktransmit(int sensordata);
 void logToSD(float strain); // Updated to include status
 void sdInit();
-void updatetime();
+void HX711_init();
+void readStrain();
+
 
 #endif
 

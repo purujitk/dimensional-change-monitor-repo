@@ -62,17 +62,12 @@ void sdInit() {
   }
 }
 
-///////////updating time////////////////
-void updatetime() {
-  timeClient.begin();
-  timeClient.update();
-}
 
 ///////////logging data to sd card////////////////
 
 void logToSD(float strain) {
 
-  updateTime(); // Ensure time is current
+  timeClient.update(); // Ensure time is current
 
   File file = SD.open("/strainlog.csv", FILE_APPEND);
 
@@ -81,10 +76,52 @@ void logToSD(float strain) {
     file.print(timeClient.getFormattedDate()); // e.g., 2025-03-05T12:00:00Z
     file.print(",");
     file.print(strain, 2);
-
     file.close();
     Serial.println("Data logged to SD as CSV.");
   } else {
     Serial.println("Error opening strainlog.csv");
   }
+}
+
+/////////////HX711 initialization////////////////
+
+void hx711_init(){
+
+  scale.begin(DATA_LINE,CLOCK_LINE);
+  scale.set_scale();
+  scale.tare();
+  scale.set_scale(CALIBRATION_FACTOR);
+
+}
+
+//////////////GETTING DEFORMATION////////////////////////
+
+
+// 1,2,3 for long, rad, tang; deformation returned in mm
+
+
+float get_deformation(int dim){
+
+  switch (dim){
+    case 1: return (float) scale.get_units() * INITIAL_LENGTH_LONG * 0.000001;
+
+    case 2: return (float) scale.get_units() * INITIAL_LENGTH_RAD * 0.000001;
+
+    case 3: return (float) scale.get_units() *INITIAL_LENGTH_RAD * 0.000001;
+
+    else: return 0;
+    
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
 }
