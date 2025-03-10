@@ -17,8 +17,13 @@ by: Purujit Kantiya
 #include <WiFiUdp.h>
 
 ////////////WIFI PARAMATERS//////////////
-#define WIFI_SSD "Purujit's iPhone" //change depending on wifi client
+// #define WIFI_SSD "QueensU-Secure" //change depending on wifi client
+// #define WIFI_USER "23mt27"
+// #define WIFI_PASS "qj5sTXn5E_-mjs9"
+
+#define WIFI_SSD "Purujit" //change depending on wifi client
 #define WIFI_PASS "PurujitK"
+
 // #define WIFI_SSD "Ludacris-5G" //change depending on wifi client
 // #define WIFI_PASS "#Stanley2025!"
 

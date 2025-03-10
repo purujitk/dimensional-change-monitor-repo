@@ -11,7 +11,7 @@ by: Purujit Kanitya
 
 void wifiinit(){
 
-  WiFi.begin(WIFI_SSD, WIFI_PASS);
+  WiFi.begin(WIFI_SSD`  , WIFI_PASS);
   Serial.println("connecting to wifi....");
 
   while (WiFi.status() != WL_CONNECTED){

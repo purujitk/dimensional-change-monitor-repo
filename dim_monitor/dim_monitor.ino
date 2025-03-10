@@ -14,7 +14,7 @@ client: Ingenium
 WiFiClient client;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
-HX711 scale;
+    HX711 scale;
 
 const char* W_API_KEY = "LG11PSUFXN66T3DA";
 const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
@@ -41,10 +41,15 @@ void setup() {
     Serial.println("transmission 1 Succesful, Check Thingspeak.........");
   }
 
-  stat = ThingSpeak.writeField(CHANNEL_ID, 2, "WORLD", W_API_KEY);
+  delay(15000); //THINGSPEAK TRANSIMISSION RATE IS MINIMUM 15 SECONDS!!!!
 
-  if (stat == 200) {
+  int new_stat = ThingSpeak.writeField(CHANNEL_ID, 2, "WORLD", W_API_KEY);
+
+  if (new_stat == 200) {
     Serial.println("transmission 2 Succesful, Check Thingspeak.........");
+  } else{
+    Serial.println("FAILED");
+    Serial.println(new_stat);
   }
 }
 
@@ -56,6 +61,8 @@ void loop() {
     Serial.println("WiFi disconnected....");
     WiFi.reconnect();
   }
+  
+  delay(5000);
 
   // if(timeClient.getepochtime() - prev_time >= INTERVAL){
 
