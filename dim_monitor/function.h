@@ -32,9 +32,9 @@ extern const char* R_API_KEY;
 extern unsigned long CHANNEL_ID;
 
 // #define CHANNEL_ID "2865189"
-extern const char* W_API_KEY = "LG11PSUFXN66T3DA";
-extern const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
-extern unsigned long CHANNEL_ID = 865189;
+// extern const char* W_API_KEY = "LG11PSUFXN66T3DA";
+// extern const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
+// extern unsigned long CHANNEL_ID = 865189;
 
 #define SERVER "api.thingspeak.com"
 
@@ -54,7 +54,7 @@ extern unsigned long CHANNEL_ID = 865189;
 #define NTP_SERVER "pool.ntp.org"
 extern NTPClient timeClient;
 
-#define INTERVAL 900
+#define INTERVAL 100000
 
 
 ///////////HX711 PIN ASSIGNMENTS//////////////
@@ -67,21 +67,29 @@ extern HX711 scale;
 
 ////////////DIMENSIONAL DATA////////////////
 
-//THIS DATA WAS RECORDED UNDER STAP
+//THIS DATA WAS RECORDED UNDER STAP hopefully
 
-const float INITIAL_LENGTH_LONG = 0; //or x,y,z not sure
-const float INITIAL_LENGTH_RAD = 0;
-const float INITIAL_LENGTH_TANG = 0;
+const float INITIAL_LENGTH = 0; //or x,y,z not sure
+// const float INITIAL_LENGTH_RAD = 0;
+// const float INITIAL_LENGTH_TANG = 0;
+
+///////////STRAIN GUAGE DATA//////////////////
+#define GUAGE_FACTOR 2.0
+#define EXC_VOLT 0
+extern long baseline;
+
 
 
 ///////////function initialization////////////
 
 void wifiinit(); //wifi initialization 
-void thingspeaktransmit(int sensordata, int field);
+int thingspeaktransmit(int sensordata, int field);
 void logToSD(float strain); // Updated to include status
 void sdInit();
 void HX711_init();
-float get_deformation();
+float get_deformation(float baseline);
+float get_nominal_reading();
+
 
 
 #endif

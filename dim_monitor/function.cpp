@@ -11,7 +11,7 @@ by: Purujit Kanitya
 
 void wifiinit(){
 
-  WiFi.begin(WIFI_SSD`  , WIFI_PASS);
+  WiFi.begin(WIFI_SSD, WIFI_PASS);
   Serial.println("connecting to wifi....");
 
   while (WiFi.status() != WL_CONNECTED){
@@ -59,7 +59,8 @@ void sdInit() {
     } else {
       Serial.println("Error creating strainlog.csv");
     }
-  }
+  }else 
+    Serial.println("file already there");
 }
 
 
@@ -72,7 +73,7 @@ void logToSD(float strain) {
   File file = SD.open("/strainlog.csv", FILE_APPEND);
 
   if (file) {
-    file.print(timeClient.getFormattedDate()); // e.g., 2025-03-05T12:00:00Z
+    file.print(timeClient.getFormattedTime()); // e.g., 2025-03-05T12:00:00Z
     file.print(",");
     file.print(strain, 2);
     file.close(); 
@@ -91,27 +92,48 @@ void HX711_init(){
   scale.set_gain(64);
   scale.set_scale();
   scale.tare();
+  Serial.println("THE Hx711 is calibrated");
   // scale.set_scale(CALIBRATION_FACTOR); really needed?
   
+}
+//////////////GETTING DEFORMATION////////////////////////
+
+float get_nominal_reading(){
+  float nominal = 0;
+  Serial.println("starting nominal reading");
+  for(int i = 0; i < 60; i++){
+    nominal += scale.read_average(10);
+    delay(1000);
+  } 
+  
+  Serial.println("nominal reading");
+  Serial.println(nominal);
+  Serial.println("Nominal reading taken");
+  
+  return (nominal/60);
+
 }
 
 //////////////GETTING DEFORMATION////////////////////////
 
 
-// 1,2,3 for long, rad, tang; deformation returned in mm (only in the case we use multiple strain guages
+// 1,2,3 for long, rad, tang; deformation returned in mm (only in the case we use multiple strain guages) --> used with the switch case only
 
 
 //scale get units returns mass, we need to find the strain
 
-float get_deformation(){
+float get_deformation(float baseline){
+
+    float strain = 0;
 
     if(scale.is_ready()){
-      
+      strain = (scale.read_average(10) - baseline)/(64*GUAGE_FACTOR*EXC_VOLT);
+      return (strain*INITIAL_LENGTH);
     }else
       Serial.println("STRAIN GUAGE NOT CONNECTED");
 
     
   }
 
-}
+
 

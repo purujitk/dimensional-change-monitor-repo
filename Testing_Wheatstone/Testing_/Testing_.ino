@@ -51,8 +51,8 @@ void setup() {
 }
 
 void loop() {
-  float strainReading = scale.get_units(10);
+  float strainReading = scale.read_average(10);
   Serial.print("Strain (microstrain): ");
-  Serial.println(strainReading);
+  Serial.println(strainReading);  
   delay(1000);
 }

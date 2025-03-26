@@ -24,6 +24,10 @@ const char* W_API_KEY = "LG11PSUFXN66T3DA";
 const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
 unsigned long CHANNEL_ID = 865189;
 
+unsigned long prev_time = 0;
+long baseline = 0;
+
+
 void setup() {
   
   // int prev_time = timeClient.getepochtime();
@@ -46,6 +50,15 @@ void setup() {
   //initializing sd card reader
   sdInit();
 
+  //initializing the ADC
+  HX711_init();
+
+  //getting baseline value (nominal)
+  baseline = get_nominal_reading();
+
+
+
+
 }
 
 void loop() {
@@ -54,29 +67,24 @@ void loop() {
 
   if (WiFi.status() != WL_CONNECTED){
     Serial.println("WiFi disconnected....");
-    WiFi.reconnect();
+    // WiFi.reconnect();
   }
 
-  time = timeCLient.getepochtime();
+  if (millis() - prev_time >= INTERVAL) {
+    prev_time = millis();  // Update prev_time
 
-  if(time - prev_time >= INTERVAL){
-
-    float data = get_deformation(1); // 1,2,3 for long, rad, tang; deformation returned in mm
-    // float data = get_deformation(SOME_VALUE); //these two for other two dimensions
-    // float data = get_deformation(SOME_VALUE);
-
-    prev_time = time;
-    status = thingspeak(get_deformation(data), 1);
+    // Take sensor reading and log data
+    float data = get_deformation(baseline);
+    int status = thingspeaktransmit(data, 1);
 
     if (status != 200){
-      println("TRANSMISSION FAILED, LOGGING TO SD.....");
-      println("ERROR CODE %d",status);
-      logToSD(get_deformation(data));
-    }
-    else
+      Serial.println("TRANSMISSION FAILED, LOGGING TO SD.....");
+      Serial.println("ERROR CODE:");
+      Serial.println(status);
+      logToSD(data);
+    }else
       Serial.println("THINGSPEAK TRANSMISSION SUCCESFUL.....");
   }
-
-  delay(INTERVAL - time);
-
+  
 }
+
