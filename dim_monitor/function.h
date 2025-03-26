@@ -13,14 +13,10 @@ by: Purujit Kantiya
 #include <SPI.h>
 #include <SD.h>
 #include <NTPClient.h> //for date time stamps
-#include <HX711.h> //HX711 by bogdan
-#include <WiFiUdp.h>
+#include <HX711.h> //HX711 by bogdan necula
+#include <WiFiUdp.h> //for time stamping
 
 ////////////WIFI PARAMATERS//////////////
-// #define WIFI_SSD "QueensU-Secure" //change depending on wifi client
-// #define WIFI_USER "23mt27"
-// #define WIFI_PASS "qj5sTXn5E_-mjs9"
-
 #define WIFI_SSD "Purujit" //change depending on wifi client
 #define WIFI_PASS "PurujitK"
 
@@ -34,12 +30,15 @@ extern WiFiUDP ntpUDP;
 extern const char* W_API_KEY;
 extern const char* R_API_KEY;
 extern unsigned long CHANNEL_ID;
-// #define W_API_KEY "LG11PSUFXN66T3DA"
-// #define R_API_KEY "EMTZQ7KAPR04KHKB"
+
 // #define CHANNEL_ID "2865189"
+extern const char* W_API_KEY = "LG11PSUFXN66T3DA";
+extern const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
+extern unsigned long CHANNEL_ID = 865189;
 
 #define SERVER "api.thingspeak.com"
 
+//THINGSPEAK ERROR CODES
 #define API_FAIL 404
 #define VAL_RANGE -101
 #define INV_FIELD -201
@@ -59,13 +58,12 @@ extern NTPClient timeClient;
 
 
 ///////////HX711 PIN ASSIGNMENTS//////////////
-
 #define CLOCK_LINE 4
 #define DATA_LINE 16
 
 extern HX711 scale;
 
-#define CALIBRATION_FACTOR
+#define CALIBRATION_FACTOR 1
 
 ////////////DIMENSIONAL DATA////////////////
 
@@ -79,11 +77,11 @@ const float INITIAL_LENGTH_TANG = 0;
 ///////////function initialization////////////
 
 void wifiinit(); //wifi initialization 
-void thingspeaktransmit(int sensordata);
+void thingspeaktransmit(int sensordata, int field);
 void logToSD(float strain); // Updated to include status
 void sdInit();
 void HX711_init();
-float get_deformation(int dim);
+float get_deformation();
 
 
 #endif

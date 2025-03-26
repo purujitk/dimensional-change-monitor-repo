@@ -1,36 +1,58 @@
 #include <HX711.h>
 
-// Define pins
-#define DT 4    // Data pin (DOUT)
-#define SCK 16   // Clock pin (SCK)
+#define DT_PIN 16
+#define SCK_PIN 4
 
-// Create HX711 object
 HX711 scale;
+float gaugeFactor = 2.0;               // Typical GF for strain gauges
+float excitationVoltage = 3.3;         // Bridge excitation voltage
 
 void setup() {
+  Serial.begin(9600);
+  scale.begin(DT_PIN, SCK_PIN);
 
+  if (scale.is_ready()) {
+    Serial.println("HX711 is ready.");
+  } else {
+    Serial.println("HX711 not detected. Check wiring.");
+  }
 
+  scale.set_gain(64);
+  scale.set_scale();  // No calibration initially
+  scale.tare();       // Zero baseline
+  Serial.println("Tare complete. Ready for calibration...");
+  
+  // Capture baseline reading
+  // long baselineReading = scale.read();
+  // Serial.print("Baseline ADC Value: ");
+  // Serial.println(baselineReading);
 
-    Serial.begin(115200);  // Start serial monitor
-    Serial.println("HX711 Connection Test");
+  // // Apply known strain and get new reading
+  // delay(5000);  // Wait for user to apply strain
+  // long strainReading = scale.read();
+  // Serial.print("ADC Value with Known Strain: ");
+  // Serial.println(strainReading);
 
-    scale.begin(DT, SCK);  // Initialize HX711
+  // // Calculate delta ADC
+  // long deltaADC = strainReading - baselineReading;
+  // Serial.print("Delta ADC: ");
+  // Serial.println(deltaADC);
 
-    // Check if HX711 is responding
-    if (!scale.is_ready()) {
-        Serial.println("ERROR: HX711 not detected. Check wiring!");
-        while (1);  // Stop execution if no response
-    }
-    
-    Serial.println("HX711 is connected!");
+  // // Expected strain and calculation of calibration factor
+  // float knownStrain = 200e-6;  // Example: 200 microstrain //NEEDS TO BE CALCULATED USING POINT LOAD ON THE BEAM
+  // calibrationFactor = deltaADC / (knownStrain * gaugeFactor);
+  // Serial.print("New Calibration Factor: ");
+  // Serial.println(calibrationFactor);
+
+  // // Set the new calibration factor
+  // scale.set_scale(calibrationFactor);
+  // scale.tare();
+  // Serial.println("Calibration complete!");
 }
 
 void loop() {
-    // Read raw data
-    long reading = scale.get_units(10); // Average 10 readings
-    Serial.print("Raw Reading: ");
-    Serial.println(reading);
-
-    delay(1000); // Wait 1 second
+  float strainReading = scale.get_units(10);
+  Serial.print("Strain (microstrain): ");
+  Serial.println(strainReading);
+  delay(1000);
 }
-

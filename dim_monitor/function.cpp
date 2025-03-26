@@ -30,9 +30,9 @@ void wifiinit(){
 
 ///////////thingspeak transmission/////////////
 
-int thingspeak(int sensordata){
+int thingspeaktransmit(int sensordata, int field){
 
-  int status = ThingSpeak.writeField(CHANNEL_ID, 1, sensordata, W_API_KEY);
+  int status = ThingSpeak.writeField(CHANNEL_ID, field, sensordata, W_API_KEY);
 
   return status;
 }
@@ -72,14 +72,15 @@ void logToSD(float strain) {
   File file = SD.open("/strainlog.csv", FILE_APPEND);
 
   if (file) {
-    // file.print(timeClient.getFormattedDate()); // e.g., 2025-03-05T12:00:00Z
+    file.print(timeClient.getFormattedDate()); // e.g., 2025-03-05T12:00:00Z
     file.print(",");
     file.print(strain, 2);
-    file.close();
+    file.close(); 
     Serial.println("Data logged to SD as CSV.");
   } else {
     Serial.println("Error opening strainlog.csv");
   }
+
 }
 
 /////////////HX711 initialization////////////////
@@ -87,28 +88,28 @@ void logToSD(float strain) {
 void HX711_init(){
 
   scale.begin(DATA_LINE,CLOCK_LINE);
+  scale.set_gain(64);
   scale.set_scale();
   scale.tare();
-  scale.set_scale(CALIBRATION_FACTOR);
-
+  // scale.set_scale(CALIBRATION_FACTOR); really needed?
+  
 }
 
 //////////////GETTING DEFORMATION////////////////////////
 
 
-// 1,2,3 for long, rad, tang; deformation returned in mm
+// 1,2,3 for long, rad, tang; deformation returned in mm (only in the case we use multiple strain guages
 
 
-float get_deformation(int dim){
+//scale get units returns mass, we need to find the strain
 
-  switch (dim){
-    case 1: return (float) scale.get_units() * INITIAL_LENGTH_LONG * (0.000001);
+float get_deformation(){
 
-    case 2: return (float) scale.get_units() * INITIAL_LENGTH_RAD * (0.000001);
+    if(scale.is_ready()){
+      
+    }else
+      Serial.println("STRAIN GUAGE NOT CONNECTED");
 
-    case 3: return (float) scale.get_units() * INITIAL_LENGTH_RAD * (0.000001);
-
-    default: return 0;
     
   }
 
