@@ -4,21 +4,35 @@
 #define SCK_PIN 4
 
 HX711 scale;
+
 float gaugeFactor = 2.0;               // Typical GF for strain gauges
-float excitationVoltage = 3.3;         // Bridge excitation voltage
+float excitationVoltage = 3.3;  
+
+float strain = 0;
+//changing raw value into strain value
+const float Vref   = 1.25;    // Internal reference voltage (typical)
+const float Gain   = 64.0;   // Amplifier gain for channel A
+  
+// Calculate theoretical full-scale differential voltage:
+const float Vfs = Vref / Gain; // e.g., 1.25 / 128 = ~0.00977 
+
+// The number of steps in the positive range of a 24-bit ADC (signed)
+const long steps = 8388608;    // 2^23
+float rawToVoltage_theoretical = Vfs / steps;
+// Bridge excitation voltage
 
 void setup() {
   Serial.begin(9600);
   scale.begin(DT_PIN, SCK_PIN);
 
-  if (scale.is_ready()) {
-    Serial.println("HX711 is ready.");
-  } else {
-    Serial.println("HX711 not detected. Check wiring.");
+  while(!scale.is_ready()){
+    Serial.println("hx711 not connected");
   }
 
+  Serial.println("connected");
+  
   scale.set_gain(64);
-  scale.set_scale();  // No calibration initially
+  // scale.set_scale();  // No calibration initially
   scale.tare();       // Zero baseline
   Serial.println("Tare complete. Ready for calibration...");
   
@@ -48,11 +62,40 @@ void setup() {
   // scale.set_scale(calibrationFactor);
   // scale.tare();
   // Serial.println("Calibration complete!");
+  for(int x = 0; x <10; x++){
+    float nominal = 0;
+
+    Serial.println("starting nominal reading");
+
+    for(int i = 0; i < 10; i++){
+      nominal += scale.read_average(10);
+      delay(500);
+    } 
+    
+    Serial.println("nominal reading");
+    Serial.println(nominal/10,10);
+    Serial.println("Nominal reading taken");
+    
+    nominal = (nominal/10)*rawToVoltage_theoretical;
+
+    Serial.println(nominal,15);
+
+    delay(3000);
+  }
 }
 
 void loop() {
-  float strainReading = scale.read_average(10);
-  Serial.print("Strain (microstrain): ");
-  Serial.println(strainReading);  
-  delay(1000);
+  // float strainReading = scale.read_average(10);
+  // Serial.print("RAW: ");
+  // Serial.println(strainReading);
+
+
+  // // strain = ((scale.read_average(10)*rawToVoltage_theoretical) - baseline)/(64*GUAGE_FACTOR*EXC_VOLT);
+
+  // strain = scale.read_average(10)*rawToVoltage_theoretical;
+
+  // Serial.println("strain reading: ");
+  // Serial.println(strain);
+
+  // delay(1000);
 }

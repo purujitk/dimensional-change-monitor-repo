@@ -14,7 +14,9 @@ by: Purujit Kantiya
 #include <SD.h>
 #include <NTPClient.h> //for date time stamps
 #include <HX711.h> //HX711 by bogdan necula
-#include <WiFiUdp.h> //for time stamping
+// #include <WiFiUdp.h> //for time stamping
+#include <ESP_Mail_Client.h>
+#include <time.h>
 
 ////////////WIFI PARAMATERS//////////////
 #define WIFI_SSD "Purujit" //change depending on wifi client
@@ -54,7 +56,7 @@ extern unsigned long CHANNEL_ID;
 #define NTP_SERVER "pool.ntp.org"
 extern NTPClient timeClient;
 
-#define INTERVAL 100000
+#define INTERVAL 15000
 
 
 ///////////HX711 PIN ASSIGNMENTS//////////////
@@ -69,27 +71,45 @@ extern HX711 scale;
 
 //THIS DATA WAS RECORDED UNDER STAP hopefully
 
-const float INITIAL_LENGTH = 0; //or x,y,z not sure
+const float INITIAL_LENGTH = 1; //or x,y,z not sure
 // const float INITIAL_LENGTH_RAD = 0;
 // const float INITIAL_LENGTH_TANG = 0;
 
 ///////////STRAIN GUAGE DATA//////////////////
 #define GUAGE_FACTOR 2.0
-#define EXC_VOLT 0
+#define EXC_VOLT 3.3
 extern long baseline;
 
+////////////////////EMAIL/////////////////////////////
+/** The smtp host name e.g. smtp.gmail.com for GMail or smtp.office365.com for Outlook or smtp.mail.yahoo.com */
+#define SMTP_HOST "smtp.gmail.com"
+#define SMTP_PORT 465
+
+/* The sign in credentials */
+#define AUTHOR_EMAIL "strainguage839@gmail.com"
+#define AUTHOR_PASSWORD "vpqthieieiwmsoqn"
+
+/* Recipient's email*/
+// #define RECIPIENT_EMAIL "rogers.hannahrose@gmail.com"
+#define RECIPIENT_EMAIL "purujitkantiya@gmail.com"
 
 
 ///////////function initialization////////////
 
 void wifiinit(); //wifi initialization 
 int thingspeaktransmit(int sensordata, int field);
-void logToSD(float strain); // Updated to include status
+void logToSD(float data, String severity, String name); // Updated to include status
+String create_file();
 void sdInit();
 void HX711_init();
-float get_deformation(float baseline);
+float get_strain(float baseline);
 float get_nominal_reading();
-
+void email_init();
+void send_email(String name);
+void smtpCallback(SMTP_Status status);
+String getFormattedTime();
+String getFormattedDate();
+String check_severity(float data, float baseline);
 
 
 #endif

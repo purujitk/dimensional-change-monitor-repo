@@ -20,8 +20,8 @@ void setup() {
     Serial.println("SD Card initialized successfully!");
 
     // Simple file write test
-    writeFile(SD, "/test.txt", "Hello from ESP32 10-0 Purujit Kantiya\!\n");
-    readFile(SD, "/test.txt");
+    writeFile(SD, "/test.txt", "HELLO HELLOO HELLO HELLO HELOO ADFLKALISFJKEJNAIXJVOIPEAJ\!\n");
+    readFile(SD, "/test.txt");    
 }
 
 void loop() {

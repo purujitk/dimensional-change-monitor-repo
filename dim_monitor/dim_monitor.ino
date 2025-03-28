@@ -17,8 +17,10 @@ client: Ingenium
 
 WiFiClient client;
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
+// NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); MIGHT NOT BE NEEDED CAN JUST USE CONFIG TIME
 HX711 scale;
+SMTPSession smtp;
+Session_Config config;
 
 const char* W_API_KEY = "LG11PSUFXN66T3DA";
 const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
@@ -27,64 +29,76 @@ unsigned long CHANNEL_ID = 865189;
 unsigned long prev_time = 0;
 long baseline = 0;
 
+unsigned long time_dif = 0;
+
+String date = "";
+String name = "";
+
 
 void setup() {
   
-  // int prev_time = timeClient.getepochtime();
-  pinMode(2,OUTPUT);
+  //initializations
 
-  Serial.begin(115200);
-  Serial.println("ESP32 is initialized");
-
-  //initializing wifi client
-  wifiinit();
-
-  //initializing time keeper
-  timeClient.begin();
-  
-  //initializing thingspeak
-  //THINGSPEAK TRANSIMISSION RATE IS MINIMUM 15 SECONDS!!!!
-  //HAVE TO WAIT FIFTEEN SECONDS BEFORE TRANSMITTING FOR A SECONDS TIME
-  ThingSpeak.begin(client);
-
-  //initializing sd card reader
+  //initialize sd card
   sdInit();
 
-  //initializing the ADC
+  //initialize email
+  email_init();
+
+  //initialize the hx711
   HX711_init();
 
-  //getting baseline value (nominal)
-  baseline = get_nominal_reading();
+  //initialize wifi
+  wifiinit();
 
+  //initialize serial monitor
+  Serial.begin(115200);
 
+  //getting baseline value
+  baseline = get_baseline();
+
+  //getting inital date
+  date = getFormattedDate();
+
+  //creating initial file
+  name = create_file(date);
 
 
 }
 
 void loop() {
 
-  timeClient.update();
+  timeClient.upate();
 
-  if (WiFi.status() != WL_CONNECTED){
-    Serial.println("WiFi disconnected....");
-    // WiFi.reconnect();
+  time_dif = (timeClient.getEpochTime() - prev_time);
+
+  if(Wifi.status() != WL_CONNECTED){
+    for(int i = 0; i < 3; i++){
+      WiFi.reconnect();
+    }
   }
 
-  if (millis() - prev_time >= INTERVAL) {
-    prev_time = millis();  // Update prev_time
+  if (time_dif >= 900){
 
-    // Take sensor reading and log data
-    float data = get_deformation(baseline);
-    int status = thingspeaktransmit(data, 1);
+    data = get_deformation(baseline);
 
-    if (status != 200){
-      Serial.println("TRANSMISSION FAILED, LOGGING TO SD.....");
-      Serial.println("ERROR CODE:");
-      Serial.println(status);
-      logToSD(data);
-    }else
-      Serial.println("THINGSPEAK TRANSMISSION SUCCESFUL.....");
-  }
-  
+    if(getFormattedDate() != date){
+
+      if(WiFi.status() == WL_CONNECTED){
+        send_email(name);
+      }else
+        //we can store the date that could not be sent in an array possibly and then check to send that data later
+
+      date = getFormattedDate();
+      name = create_file(date);
+
+    }else 
+      logToSD(data, check_severity(data, baseline), name);
+
+
+  }else
+    //sleep for some time
+
+
 }
 
