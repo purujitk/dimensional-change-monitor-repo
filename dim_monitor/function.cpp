@@ -53,47 +53,44 @@ void sdInit() {
 
 /////////////////creating sd card file///////////////////
 
-String create_file(String formatteddate){
-
-  char name = "/" + formatteddate + ".csv";
+String create_file(String formatteddate) {
+  String name = "/" + formatteddate + ".csv"; // Corrected to String
 
   // Create or check strainlog.csv with header
-  if (!SD.exists(name)) { //JUST CHANGE TO FORMATTED TIME IN STEAD OF THAT NAME
+  if (!SD.exists(name)) {
     File file = SD.open(name, FILE_WRITE);
     if (file) {
       file.println("Timestamp,Strain Value,Severity"); // CSV header
       file.close();
-      Serial.println("file created");
+      Serial.println("File created: " + name);
     } else {
-      Serial.println("Error creating strainlog.csv");
+      Serial.println("Error creating file: " + name);
     }
-  }else 
-    Serial.println("file already there");
+  } else {
+    Serial.println("File already exists: " + name);
+  }
 
   return name;
-
 }
 
 ///////////logging data to sd card////////////////
 
-void logToSD(float data,String severity, String name) {
-
+void logToSD(float data, String severity, String name) {
   timeClient.update(); // Ensure time is current
 
   File file = SD.open(name, FILE_APPEND);
 
   if (file) {
-    file.print(formatted_local_time()); // e.g., 2025-03-05T12:00:00Z
+    file.print(formatted_local_time()); // Correct timestamp format
     file.print(",");
     file.print(data, 2);
-    file.print(",")
-    file.print(severity); // --> here we want to check wether the strain is severe
-    file.close(); 
+    file.print(",");
+    file.println(severity); // Add newline at the end
+    file.close();
     Serial.println("Data logged to SD as CSV.");
   } else {
-    Serial.println("Error opening strainlog.csv");
+    Serial.println("Error opening file: " + name);
   }
-
 }
 
 /////////////HX711 initialization////////////////
@@ -112,17 +109,25 @@ void HX711_init(){
 
 float get_nominal_reading(){
   float nominal = 0;
+
   Serial.println("starting nominal reading");
-  for(int i = 0; i < 60; i++){
-    nominal += scale.read_average(10);
-    delay(1000);
-  } 
+
+  if(scale.is_ready()){
+    Serial.println("connected");
+    for(int i = 0; i < 5; i++){ //changing to 5 for now change back to 60 later
+      nominal += scale.read_average(10);
+      delay(1000);
+    }
+  }else
+    Serial.println("GUAGE NOT connected");
+
   
   Serial.println("nominal reading");
-  Serial.println(nominal/60);
+  Serial.println(nominal/5,10);
   Serial.println("Nominal reading taken");
-  
-  return (nominal/60);
+  Serial.println(nominal/5 * rawToVoltage_theoretical, 10);
+
+  return (nominal/5);
 
 }
 
@@ -137,6 +142,7 @@ float get_nominal_reading(){
 float get_strain(float baseline){
 
     float strain = 0;
+    float baseline_strain = baseline/64*GUAGE_FACTOR*EXC_VOLT;
 
     if(scale.is_ready()){
       strain = (scale.read_average(10) - baseline)/(64*GUAGE_FACTOR*EXC_VOLT);
@@ -148,7 +154,7 @@ float get_strain(float baseline){
 
 ///////////////////////INITIALIZE EMAIL////////////////////////////
 
-void email_init(){
+void email_init() {
   MailClient.networkReconnect(true);
   smtp.debug(1);
   smtp.callback(smtpCallback);
@@ -164,8 +170,7 @@ void email_init(){
 
 //////////////////////EMAIL SENDING////////////////////////////////
 
-void send_email(String name){
-  
+void send_email(String name) {
   SMTP_Message message;
   message.sender.name = "ESP32 CSV Sender";
   message.sender.email = AUTHOR_EMAIL;
@@ -173,13 +178,19 @@ void send_email(String name){
   message.addRecipient("Recipient", RECIPIENT_EMAIL);
 
   if (SD.exists(name)) {
-    message.addAttachFile(name, "text/csv");
+    SMTP_Attachment att;
+    att.descr.filename = name.c_str();  // Convert String to char*
+    att.descr.mime = "text/csv";        // Set the MIME type
+    att.file.path = name.c_str();       // File path on SD card
+    att.file.storage_type = esp_mail_file_storage_type_sd;  // Use SD card storage
+
+    // Add attachment to the message
+    message.addAttachment(att);
   } else {
     Serial.println("CSV file not found on SD card!");
   }
-  
 
-  if (!smtp.connect(&session)) {
+  if (!smtp.connect(&config)) {  // Use &config, not &session
     Serial.println("Failed to connect to SMTP server");
     return;
   }
@@ -195,67 +206,57 @@ void send_email(String name){
 
 //////////////////////GETTING EMAIL STATUS///////////////////////////////
 
-void smtpCallback(SMTP_Status status){ //refer to random nerds site was taking from there 
-
+void smtpCallback(SMTP_Status status) {
   Serial.println(status.info());
 
-  if (status.success()){//sending status
-    // ESP_MAIL_PRINTF used in the examples is for format printing via debug Serial port
-    // that works for all supported Arduino platform SDKs e.g. AVR, SAMD, ESP32 and ESP8266.
-    // In ESP8266 and ESP32, you can use Serial.printf directly.
-
+  if (status.success()) {
     Serial.println("----------------");
     ESP_MAIL_PRINTF("Message sent success: %d\n", status.completedCount());
     ESP_MAIL_PRINTF("Message sent failed: %d\n", status.failedCount());
     Serial.println("----------------\n");
 
-    for (size_t i = 0; i < smtp.sendingResult.size(); i++)
-    {
-      /* Get the result item */
+    for (size_t i = 0; i < smtp.sendingResult.size(); i++) {
       SMTP_Result result = smtp.sendingResult.getItem(i);
 
-      // In case, ESP32, ESP8266 and SAMD device, the timestamp get from result.timestamp should be valid if
-      // your device time was synched with NTP server.
-      // Other devices may show invalid timestamp as the device time was not set i.e. it will show Jan 1, 1970.
-      // You can call smtp.setSystemTime(xxx) to set device time manually. Where xxx is timestamp (seconds since Jan 1, 1970)
-      
       ESP_MAIL_PRINTF("Message No: %d\n", i + 1);
       ESP_MAIL_PRINTF("Status: %s\n", result.completed ? "success" : "failed");
       ESP_MAIL_PRINTF("Date/Time: %s\n", MailClient.Time.getDateTimeString(result.timestamp, "%B %d, %Y %H:%M:%S").c_str());
       ESP_MAIL_PRINTF("Recipient: %s\n", result.recipients.c_str());
       ESP_MAIL_PRINTF("Subject: %s\n", result.subject.c_str());
     }
-    Serial.println("----------------\n");
 
-    // You need to clear sending result as the memory usage will grow up.
+    Serial.println("----------------\n");
     smtp.sendingResult.clear();
   }
 }
 
 /////////////////////////////////FORMATTED TIME////////////////////////////////////////////
 
-String getFormattedTime() {
-  unsigned long epochTime = timeClient.getEpochTime();  // Get the epoch time
-  struct tm* timeInfo = localtime(&epochTime);  // Convert epoch time to struct tm
+String formatted_local_time() {
+  time_t now;
+  time(&now);
+  struct tm *timeinfo;
+  timeinfo = localtime(&now);
 
-  // Format the time into HH:MM:SS
-  char formattedTime[9];  // HH:MM:SS + null terminator
-  snprintf(formattedTime, sizeof(formattedTime), "%02d:%02d:%02d", timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
-
-  return String(formattedTime);  // Return the formatted time as a String
+  char buffer[25];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", timeinfo);
+  return String(buffer);
 }
 
 ////////////////////////FORMATED DATE//////////////////////////////////
 
 String getFormattedDate() {
-  unsigned long epochTime = timeClient.getEpochTime();  // Get the epoch time
-  struct tm* timeInfo = localtime(&epochTime);  // Convert epoch time to struct tm
+  time_t now;
+  struct tm timeInfo;
 
-  // Format the date into YYYY-MM-DD
-  char formattedDate[11];  // YYYY-MM-DD + null terminator
-  snprintf(formattedDate, sizeof(formattedDate), "%04d-%02d-%02d", timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday);
+  time(&now);  // Get current time
+  localtime_r(&now, &timeInfo);
 
-  return String(formattedDate);  // Return the formatted date as a String
+  char formattedDate[20];  // Format: YYYY-MM-DD
+  snprintf(formattedDate, sizeof(formattedDate), "%04d-%02d-%02d",
+           timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday);
+
+  return String(formattedDate);
 }
 
 
@@ -268,7 +269,7 @@ String check_severity(float data, float baseline){
   if((abs(data - baseline_strain)/baseline_strain) >= 0.02){ //max strain of guage is 2 perecent so we cant do ten percent --> we can notify if the strain is at the limit
     return "CAUTION";
   }else
-    return "NORMAL"
+    return "NORMAL";
 
 }
 

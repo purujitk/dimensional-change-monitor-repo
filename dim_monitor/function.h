@@ -14,7 +14,7 @@ by: Purujit Kantiya
 #include <SD.h>
 #include <NTPClient.h> //for date time stamps
 #include <HX711.h> //HX711 by bogdan necula
-// #include <WiFiUdp.h> //for time stamping
+#include <WiFiUdp.h> //for time stamping
 #include <ESP_Mail_Client.h>
 #include <time.h>
 
@@ -77,8 +77,10 @@ const float INITIAL_LENGTH = 1; //or x,y,z not sure
 
 ///////////STRAIN GUAGE DATA//////////////////
 #define GUAGE_FACTOR 2.0
-#define EXC_VOLT 3.3
+#define EXC_VOLT 2.24
 extern long baseline;
+
+extern float rawToVoltage_theoretical;
 
 ////////////////////EMAIL/////////////////////////////
 /** The smtp host name e.g. smtp.gmail.com for GMail or smtp.office365.com for Outlook or smtp.mail.yahoo.com */
@@ -94,12 +96,16 @@ extern long baseline;
 #define RECIPIENT_EMAIL "purujitkantiya@gmail.com"
 
 
+extern SMTPSession smtp;
+extern Session_Config config;
+
+
 ///////////function initialization////////////
 
 void wifiinit(); //wifi initialization 
 int thingspeaktransmit(int sensordata, int field);
 void logToSD(float data, String severity, String name); // Updated to include status
-String create_file();
+String create_file(String formatteddate);
 void sdInit();
 void HX711_init();
 float get_strain(float baseline);
@@ -107,7 +113,7 @@ float get_nominal_reading();
 void email_init();
 void send_email(String name);
 void smtpCallback(SMTP_Status status);
-String getFormattedTime();
+String formatted_local_time();
 String getFormattedDate();
 String check_severity(float data, float baseline);
 

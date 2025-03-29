@@ -17,7 +17,7 @@ client: Ingenium
 
 WiFiClient client;
 WiFiUDP ntpUDP;
-// NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); MIGHT NOT BE NEEDED CAN JUST USE CONFIG TIME
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); //MIGHT NOT BE NEEDED CAN JUST USE CONFIG TIME
 HX711 scale;
 SMTPSession smtp;
 Session_Config config;
@@ -33,11 +33,40 @@ unsigned long time_dif = 0;
 
 String date = "";
 String name = "";
+float data =0;
+
+const float Vref   = 1.25;    // Internal reference voltage (typical)
+const float Gain   = 64.0;   // Amplifier gain for channel A
+const float Vfs = Vref / Gain; // e.g., 1.25 / 128 = ~0.00977 
+const long steps = 8388608;
+float rawToVoltage_theoretical = Vfs / steps;
 
 
 void setup() {
   
   //initializations
+
+  Serial.begin(115200);
+
+  //initialize wifi
+  wifiinit();
+
+  //initialize the time
+  configTime(-18000, 3600, "pool.ntp.org", "time.nist.gov");
+
+  Serial.println("Fetching time...");
+  delay(2000);
+
+  // Wait until a valid time is obtained
+  time_t now;
+  time(&now);
+  while (now < 1700000000) {  // 1700000000 is around 2023, ensures time is valid
+    Serial.println("Waiting for NTP sync...");
+    delay(500);
+    time(&now);
+  }
+
+  Serial.println("Time synchronized successfully!");
 
   //initialize sd card
   sdInit();
@@ -47,15 +76,13 @@ void setup() {
 
   //initialize the hx711
   HX711_init();
-
-  //initialize wifi
-  wifiinit();
-
-  //initialize serial monitor
-  Serial.begin(115200);
+  delay(2000);
+  if(scale.is_ready()){
+    Serial.println("hx711 connected");
+  }
 
   //getting baseline value
-  baseline = get_baseline();
+  baseline = get_nominal_reading();
 
   //getting inital date
   date = getFormattedDate();
@@ -68,23 +95,29 @@ void setup() {
 
 void loop() {
 
-  timeClient.upate();
+  timeClient.update();
 
-  time_dif = (timeClient.getEpochTime() - prev_time);
-
-  if(Wifi.status() != WL_CONNECTED){
+  if(WiFi.status() != WL_CONNECTED){
+    Serial.println("not connetced to wifi");
     for(int i = 0; i < 3; i++){
       WiFi.reconnect();
     }
   }
 
-  if (time_dif >= 900){
+  time_dif = (timeClient.getEpochTime() - prev_time);
 
-    data = get_deformation(baseline);
+  if (time_dif >= 60){
 
-    if(getFormattedDate() != date){
+    prev_time = timeClient.getEpochTime();
+
+    data = get_strain(baseline);
+
+    if(/*getFormattedDate()*/ String("2006-12-14") != date){
+
+      logToSD(data, check_severity(data, baseline), name);
 
       if(WiFi.status() == WL_CONNECTED){
+        Serial.println("wifi connected for email");
         send_email(name);
       }else
         //we can store the date that could not be sent in an array possibly and then check to send that data later
@@ -92,12 +125,17 @@ void loop() {
       date = getFormattedDate();
       name = create_file(date);
 
-    }else 
-      logToSD(data, check_severity(data, baseline), name);
+    }
+      
 
 
   }else
     //sleep for some time
+    Serial.println("sleep section");
+    esp_sleep_enable_timer_wakeup(time_dif*1000000);///*(time_dif*10000000) - */
+    esp_deep_sleep_start();
+    Serial.println("out of sleep");
+
 
 
 }
