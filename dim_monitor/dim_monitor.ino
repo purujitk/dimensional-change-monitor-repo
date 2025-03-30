@@ -47,6 +47,17 @@ void setup() {
   //initializations
 
   Serial.begin(115200);
+  
+  delay(500);
+
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+
+  //for sleep wakup --> want to skip the setup after wakeup
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
+    Serial.println("Woke up from deep sleep. Skipping setup...");
+    return;  // Skip rest of setup if woke up from sleep
+  }else 
+    Serial.println(wakeup_reason);
 
   //initialize wifi
   wifiinit();
@@ -105,6 +116,8 @@ void loop() {
   }
 
   time_dif = (timeClient.getEpochTime() - prev_time);
+  Serial.println("time dif is ");
+  Serial.println(time_dif);
 
   if (time_dif >= 60){
 
@@ -132,11 +145,9 @@ void loop() {
   }else
     //sleep for some time
     Serial.println("sleep section");
-    esp_sleep_enable_timer_wakeup(time_dif*1000000);///*(time_dif*10000000) - */
+    esp_sleep_enable_timer_wakeup(60*1000000); // --> should set this to the intrval size
     esp_deep_sleep_start();
     Serial.println("out of sleep");
-
-
 
 }
 
