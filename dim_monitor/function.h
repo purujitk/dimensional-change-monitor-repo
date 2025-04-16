@@ -96,6 +96,8 @@ extern float rawToVoltage_theoretical;
 extern SMTPSession smtp;
 extern Session_Config config;
 
+///////////bool I need/////////
+extern bool missed_date;
 
 ///////////function initialization////////////
 
@@ -108,11 +110,13 @@ void HX711_init();
 float get_strain(float baseline);
 float get_nominal_reading();
 void email_init();
-void send_email(String name);
+void send_email(String name, bool missed_date);
 void smtpCallback(SMTP_Status status);
 String formatted_local_time();
 String getFormattedDate();
 String check_severity(float data, float baseline);
+void logToSDmissedDate(String date, String name);
+String create_file_missed_date();
 
 
 #endif

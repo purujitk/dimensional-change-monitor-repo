@@ -46,6 +46,8 @@ float rawToVoltage_theoretical = Vfs / steps;
 
 RTC_DATA_ATTR float baseline_strain;
 
+bool date_missed = false;
+
 
 void setup() {
   //initializations
@@ -109,6 +111,10 @@ void setup() {
   //creating initial file
   name = create_file(date);
 
+  //create missed date file
+  create_file_missed_date();
+
+  //sleep timer
   esp_sleep_enable_timer_wakeup(60*1000000);
 
 
@@ -120,8 +126,9 @@ void loop(){
 
   if(WiFi.status() != WL_CONNECTED){
     Serial.println("not connetced to wifi");
-    for(int i = 0; i < 3; i++){
+    for(int i = 0; i < 10; i++){
       WiFi.reconnect();
+      delay(100);
     }
   }
 
@@ -135,15 +142,23 @@ void loop(){
 
   data = get_strain(baseline);
 
-  if(/*getFormattedDate()*/ String("2006-12-14") != date){
+  logToSD(data, check_severity(data, baseline_strain), name);
+
+  if(/*getFormattedDate()*/String("2006-12-14") != date){ //String("2006-12-14") // this need to be changed to get_formatteddat(); so that email can be sent when the on new day
 
     logToSD(data, check_severity(data, baseline_strain), name);
 
     if(WiFi.status() == WL_CONNECTED){
       Serial.println("wifi connected for email");
       send_email(name);
-    }//else
-      //we can store the date that could not be sent in an array possibly and then check to send that data later
+      // if(date_missed){
+      //   //open /missed_date.csv
+      //   //loop through get dates missed and than also send emails of those files with
+      //   //
+      // }
+    }else //possibly get rid of this functionality too much work too little time
+      logToSDmissedDate(date,"/missed_date.csv");
+      date_missed = true;
 
     date = getFormattedDate();
     name = create_file(date);

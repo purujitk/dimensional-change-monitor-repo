@@ -73,6 +73,28 @@ String create_file(String formatteddate) {
   return name;
 }
 
+////////////////MISSED DATE FILE//////////////
+
+String create_file_missed_date() {
+  String name = "/" + "missed_dates" + ".csv"; // Corrected to String
+
+  // Create or check strainlog.csv with header
+  if (!SD.exists(name)) {
+    File file = SD.open(name, FILE_WRITE);
+    if (file) {
+      file.println("Missed Dates"); // CSV header
+      file.close();
+      Serial.println("File created: " + name);
+    } else {
+      Serial.println("Error creating file: " + name);
+    }
+  } else {
+    Serial.println("File already exists: " + name);
+  }
+
+  return name;
+}
+
 ///////////logging data to sd card////////////////
 
 void logToSD(float data, String severity, String name) {
@@ -91,6 +113,22 @@ void logToSD(float data, String severity, String name) {
   } else {
     Serial.println("Error opening file: " + name);
   }
+}
+
+////////////MISSED DATES/////////////////
+
+void logToSDmissedDate(String date, String name) {
+  timeClient.update(); // Ensure time is current
+
+  File file = SD.open(name, FILE_APPEND);
+
+  if (file) {
+    file.print(date); // Correct timestamp format
+    Serial.println("Data logged to SD as CSV.");
+  } else {
+    Serial.println("Error opening file: " + name);
+  }
+
 }
 
 /////////////HX711 initialization////////////////
@@ -181,11 +219,16 @@ void email_init() {
 
 //////////////////////EMAIL SENDING////////////////////////////////
 
-void send_email(String name) {
+void send_email(String name, bool missed_date) {
   SMTP_Message message;
   message.sender.name = "ESP32 CSV Sender";
   message.sender.email = AUTHOR_EMAIL;
-  message.subject = "CSV Data from ESP32";
+  if(missed_date){
+    message.subject = "CSV Data from ESP32 - Missed Date";
+  }else{
+    message.subject = "CSV Data from ESP32";
+  }
+  
   message.addRecipient("Recipient", RECIPIENT_EMAIL);
 
   if (SD.exists(name)) {
