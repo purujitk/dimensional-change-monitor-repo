@@ -36,28 +36,27 @@ String name = "";
 float data =0;
 
 const float Vref   = 1.25;    // Internal reference voltage (typical)
-const float Gain   = 64.0;   // Amplifier gain for channel A
+const float Gain   = 128.0;   // Amplifier gain for channel A
 const float Vfs = Vref / Gain; // e.g., 1.25 / 128 = ~0.00977 
 const long steps = 8388608;
 float rawToVoltage_theoretical = Vfs / steps;
 
 
 void setup() {
-  
   //initializations
-
   Serial.begin(115200);
   
   delay(500);
 
-  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  //sleep mode implemintation needs to be worked on
+  // esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
   //for sleep wakup --> want to skip the setup after wakeup
-  if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
-    Serial.println("Woke up from deep sleep. Skipping setup...");
-    return;  // Skip rest of setup if woke up from sleep
-  }else 
-    Serial.println(wakeup_reason);
+  // if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
+  //   Serial.println("Woke up from deep sleep. Skipping setup...");
+  //   return;  // Skip rest of setup if woke up from sleep
+  // }else 
+  //   Serial.println(wakeup_reason);
 
   //initialize wifi
   wifiinit();
@@ -92,8 +91,11 @@ void setup() {
     Serial.println("hx711 connected");
   }
 
-  //getting baseline value
+  //getting baseline voltage reading value
   baseline = get_nominal_reading();
+
+  //converting baseline voltage to baseline strain
+  float baseline_strain = (baseline/EXC_VOLT)*conversion_factor*4/GAUGE_FACTOR;
 
   //getting inital date
   date = getFormattedDate();
@@ -119,7 +121,7 @@ void loop() {
   Serial.println("time dif is ");
   Serial.println(time_dif);
 
-  if (time_dif >= 60){
+  if (time_dif >= 60){ //should take readings every minute (This is for testing purposes actual thing should have greater interval)
 
     prev_time = timeClient.getEpochTime();
 
@@ -127,7 +129,7 @@ void loop() {
 
     if(/*getFormattedDate()*/ String("2006-12-14") != date){
 
-      logToSD(data, check_severity(data, baseline), name);
+      logToSD(data, check_severity(data, baseline_strain), name);
 
       if(WiFi.status() == WL_CONNECTED){
         Serial.println("wifi connected for email");
@@ -143,11 +145,11 @@ void loop() {
 
 
   }else
-    //sleep for some time
-    Serial.println("sleep section");
-    esp_sleep_enable_timer_wakeup(60*1000000); // --> should set this to the intrval size
-    esp_deep_sleep_start();
-    Serial.println("out of sleep");
+    // //sleep for some time
+    // Serial.println("sleep section");
+    // esp_sleep_enable_timer_wakeup(60*1000000); // --> should set this to the intrval size
+    // esp_deep_sleep_start();
+    // Serial.println("out of sleep");
 
 }
 

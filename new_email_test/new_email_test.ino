@@ -1,58 +1,108 @@
-/*
-function.cpp
+#include <WiFi.h>
+#include <ThingSpeak.h>
+#include <SPI.h>
+#include <SD.h>
+#include <NTPClient.h> //for date time stamps
+#include <HX711.h>     //HX711 by Bogdan Necula
+#include <WiFiUdp.h>   //for time stamping
+#include <ESP_Mail_Client.h>
+#include <time.h>
 
-by: Purujit Kanitya
+#define SD_CS_PIN 5
 
-*/
+WiFiClient client;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
+SMTPSession smtp;
+Session_Config config;
 
-#include "function.h"
+#define SMTP_HOST "smtp.gmail.com"
+#define SMTP_PORT 465
 
-///////////wifi initialization/////////////
+#define AUTHOR_EMAIL "strainguage839@gmail.com"
+#define AUTHOR_PASSWORD "vpqthieieiwmsoqn"
 
-void wifiinit(){
+#define WIFI_SSID "Purujit" // Corrected SSID
+#define WIFI_PASS "PurujitK"
 
-  WiFi.begin(WIFI_SSD, WIFI_PASS);
-  Serial.println("connecting to wifi....");
+#define RECIPIENT_EMAIL "purujitkantiya@gmail.com"
 
-  while (WiFi.status() != WL_CONNECTED){
+String name = "";
+
+void setup() {
+  Serial.begin(115200);
+
+  wifiinit();  // Connect to Wi-Fi
+
+  // Configure time using NTP
+  configTime(-18000, 3600, "pool.ntp.org", "time.nist.gov");
+
+    Serial.println("Fetching time...");
+    delay(2000);
+
+    // Wait until a valid time is obtained
+    time_t now;
+    time(&now);
+    while (now < 1700000000) {  // 1700000000 is around 2023, ensures time is valid
+      Serial.println("Waiting for NTP sync...");
+      delay(500);
+      time(&now);
+    }
+    Serial.println("Time synchronized successfully!");
+
+  sdInit();  // Initialize SD card
+  email_init();  // Initialize email client
+
+  // Get a valid date after sync and create the file
+  name = create_file(getFormattedDate());  // Create file with correct date
+
+  logToSD(3.1415, "CAUTION", name);  // Log sample data
+
+  send_email(name);  // Send email with CSV
+}
+
+
+
+void loop() {
+  // No repetitive tasks required here
+}
+
+// ==============================
+// WiFi Initialization
+// ==============================
+void wifiinit() {
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.println("Connecting to WiFi....");
+
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.println("Wifi not connnected...");
+    Serial.println("WiFi not connected...");
   }
-  delay(2000);
 
-  Serial.println("connected to the wifi...");
+  delay(2000);
+  Serial.println("Connected to WiFi...");
   Serial.println("IP Address: ");
   Serial.println(WiFi.localIP());
-
   WiFi.mode(WIFI_STA);
-
 }
 
-///////////thingspeak transmission///////////// PROBABLY NOT GOING TO USE NOW WE JUST WANT TO SEND TO EMAIL ERIN
-
-int thingspeaktransmit(int sensordata, int field){
-
-  int status = ThingSpeak.writeField(CHANNEL_ID, field, sensordata, W_API_KEY);
-
-  return status;
-}
-
-//////////sd card reader initialization//////////////
-
+// ==============================
+// SD Card Initialization
+// ==============================
 void sdInit() {
-
   Serial.println("Initializing SD card...");
   if (!SD.begin(SD_CS_PIN)) {
     Serial.println("SD Card initialization failed!");
-    while (1); // Halt if SD fails
+    while (1)
+      ; // Halt if SD fails
   }
 
   Serial.println("SD Card initialized.");
-
 }
 
-/////////////////creating sd card file///////////////////
-
+// ==============================
+// Create a New File on SD
+// ==============================
 String create_file(String formatteddate) {
   String name = "/" + formatteddate + ".csv"; // Corrected to String
 
@@ -73,8 +123,9 @@ String create_file(String formatteddate) {
   return name;
 }
 
-///////////logging data to sd card////////////////
-
+// ==============================
+// Log Data to SD Card
+// ==============================
 void logToSD(float data, String severity, String name) {
   timeClient.update(); // Ensure time is current
 
@@ -93,69 +144,42 @@ void logToSD(float data, String severity, String name) {
   }
 }
 
-/////////////HX711 initialization////////////////
+// ==============================
+// Get Formatted Date
+// ==============================
+String getFormattedDate() {
+  time_t now;
+  struct tm timeInfo;
 
-void HX711_init(){
+  time(&now);  // Get current time
+  localtime_r(&now, &timeInfo);
 
-  scale.begin(DATA_LINE,CLOCK_LINE);
-  scale.set_gain(64);
-  scale.set_scale();
-  scale.tare();
-  Serial.println("THE Hx711 is calibrated");
-  // scale.set_scale(CALIBRATION_FACTOR); really needed?
-  
-}
-//////////////GETTING DEFORMATION////////////////////////
+  char formattedDate[20];  // Format: YYYY-MM-DD
+  snprintf(formattedDate, sizeof(formattedDate), "%04d-%02d-%02d",
+           timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday);
 
-float get_nominal_reading(){
-  float nominal = 0;
-
-  Serial.println("starting nominal reading");
-
-  if(scale.is_ready()){
-    Serial.println("connected");
-    for(int i = 0; i < 5; i++){ //changing to 5 for now change back to 60 later
-      nominal += scale.read_average(10);
-      delay(1000);
-    }
-  }else
-    Serial.println("GUAGE NOT connected");
-
-  
-  Serial.println("nominal reading");
-  Serial.println(nominal/5,10);
-  Serial.println("Nominal reading taken");
-  Serial.println(nominal/5 * rawToVoltage_theoretical, 10);
-
-  return (nominal/5*rawToVoltage_theoretical);
-
+  return String(formattedDate);
 }
 
-//////////////GETTING DEFORMATION////////////////////////
-
-// 1,2,3 for long, rad, tang; deformation returned in mm (only in the case we use multiple strain guages) --> used with the switch case only
 
 
-//scale get units returns mass, we need to find the strain
+// ==============================
+// Get Formatted Local Time
+// ==============================
+String formatted_local_time() {
+  time_t now;
+  time(&now);
+  struct tm *timeinfo;
+  timeinfo = localtime(&now);
 
-float get_strain(float baseline){
+  char buffer[25];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", timeinfo);
+  return String(buffer);
+}
 
-    float strain = 0;
-    float new_voltage = 0;
-
-    if(scale.is_ready()){
-      new_voltage = scale.read_average(10)*rawToVoltage_theoretical;
-      strain = ((new_voltage-baseline)/EXC_VOLT)*conversion_factor*4/GAUGE_FACTOR;
-      return strain;
-    }else
-      Serial.println("STRAIN GUAGE NOT CONNECTED");
-
-    return strain;
-
-  }
-
-///////////////////////INITIALIZE EMAIL////////////////////////////
-
+// ==============================
+// Email Initialization
+// ==============================
 void email_init() {
   MailClient.networkReconnect(true);
   smtp.debug(1);
@@ -170,8 +194,9 @@ void email_init() {
   config.time.day_light_offset = 0;
 }
 
-//////////////////////EMAIL SENDING////////////////////////////////
-
+// ==============================
+// Send Email with CSV Attachment
+// ==============================
 void send_email(String name) {
   SMTP_Message message;
   message.sender.name = "ESP32 CSV Sender";
@@ -205,9 +230,9 @@ void send_email(String name) {
 }
 
 
-
-//////////////////////GETTING EMAIL STATUS///////////////////////////////
-
+// ==============================
+// SMTP Callback for Debug
+// ==============================
 void smtpCallback(SMTP_Status status) {
   Serial.println(status.info());
 
@@ -231,68 +256,3 @@ void smtpCallback(SMTP_Status status) {
     smtp.sendingResult.clear();
   }
 }
-
-/////////////////////////////////FORMATTED TIME////////////////////////////////////////////
-
-String formatted_local_time() {
-  time_t now;
-  time(&now);
-  struct tm *timeinfo;
-  timeinfo = localtime(&now);
-
-  char buffer[25];
-  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", timeinfo);
-  return String(buffer);
-}
-
-////////////////////////FORMATED DATE//////////////////////////////////
-
-String getFormattedDate() {
-  time_t now;
-  struct tm timeInfo;
-
-  time(&now);  // Get current time
-  localtime_r(&now, &timeInfo);
-
-  char formattedDate[20];  // Format: YYYY-MM-DD
-  snprintf(formattedDate, sizeof(formattedDate), "%04d-%02d-%02d",
-           timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday);
-
-  return String(formattedDate);
-}
-
-
-////////////////////////check severirty//////////////////////////////
-
-String check_severity(float data, float baseline){
-
-  if((abs(data - baseline)/baseline) >= 0.02){ //max strain of guage is 2 perecent so we cant do ten percent --> we can notify if the strain is at the limit
-    return "CAUTION";
-  }else
-    return "NORMAL";
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

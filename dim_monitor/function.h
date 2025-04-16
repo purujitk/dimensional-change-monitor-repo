@@ -22,9 +22,6 @@ by: Purujit Kantiya
 #define WIFI_SSD "Purujit" //change depending on wifi client
 #define WIFI_PASS "PurujitK"
 
-// #define WIFI_SSD "Ludacris-5G" //change depending on wifi client
-// #define WIFI_PASS "#Stanley2025!"
-
 extern WiFiClient client;
 extern WiFiUDP ntpUDP;
 
@@ -79,8 +76,8 @@ const float INITIAL_LENGTH = 1; //or x,y,z not sure
 #define GUAGE_FACTOR 2.0
 #define EXC_VOLT 2.24
 extern long baseline;
-
 extern float rawToVoltage_theoretical;
+#define conversion_factor 1000000
 
 ////////////////////EMAIL/////////////////////////////
 /** The smtp host name e.g. smtp.gmail.com for GMail or smtp.office365.com for Outlook or smtp.mail.yahoo.com */

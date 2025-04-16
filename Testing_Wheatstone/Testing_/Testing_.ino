@@ -10,11 +10,11 @@ float EXC_VOLT = 2.24;
 
 float strain = 0;
 //changing raw value into strain value
-const float Vref   = 1.25;    // Internal reference voltage (typical)
+      // Internal reference voltage (typical)
 const float Gain   = 64.0;   // Amplifier gain for channel A
   
 // Calculate theoretical full-scale differential voltage:
-const float Vfs = Vref / Gain; // e.g., 1.25 / 128 = ~0.00977 
+x // e.g., 1.25 / 128 = ~0.00977 
 
 // The number of steps in the positive range of a 24-bit ADC (signed)
 const long steps = 8388608;    // 2^23
@@ -31,7 +31,7 @@ void setup() {
 
   Serial.println("connected");    
   
-  scale.set_gain(64);
+  scale.set_gain(128);
   // scale.set_scale();  // No calibration initially
   scale.tare();       // Zero baseline
   Serial.println("Tare complete. Ready for calibration...");
