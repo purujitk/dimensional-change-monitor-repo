@@ -60,7 +60,7 @@ String create_file(String formatteddate) {
   if (!SD.exists(name)) {
     File file = SD.open(name, FILE_WRITE);
     if (file) {
-      file.println("Timestamp,Strain Value,Severity"); // CSV header
+      file.println("Timestamp,Strain Value"); // CSV header "Timestamp,Strain Value,Severity"
       file.close();
       Serial.println("File created: " + name);
     } else {
@@ -75,29 +75,29 @@ String create_file(String formatteddate) {
 
 ////////////////MISSED DATE FILE//////////////
 
-String create_file_missed_date() {
-  String name = "/" + "missed_dates" + ".csv"; // Corrected to String
+// String create_file_missed_date() {
+//   String name = "/" + "missed_dates" + ".csv"; // Corrected to String
 
-  // Create or check strainlog.csv with header
-  if (!SD.exists(name)) {
-    File file = SD.open(name, FILE_WRITE);
-    if (file) {
-      file.println("Missed Dates"); // CSV header
-      file.close();
-      Serial.println("File created: " + name);
-    } else {
-      Serial.println("Error creating file: " + name);
-    }
-  } else {
-    Serial.println("File already exists: " + name);
-  }
+//   // Create or check strainlog.csv with header
+//   if (!SD.exists(name)) {
+//     File file = SD.open(name, FILE_WRITE);
+//     if (file) {
+//       file.println("Missed Dates"); // CSV header
+//       file.close();
+//       Serial.println("File created: " + name);
+//     } else {
+//       Serial.println("Error creating file: " + name);
+//     }
+//   } else {
+//     Serial.println("File already exists: " + name);
+//   }
 
-  return name;
-}
+//   return name;
+// }
 
 ///////////logging data to sd card////////////////
 
-void logToSD(float data, String severity, String name) {
+void logToSD(float data,/*String severity,*/ String name) {
   timeClient.update(); // Ensure time is current
 
   File file = SD.open(name, FILE_APPEND);
@@ -105,9 +105,9 @@ void logToSD(float data, String severity, String name) {
   if (file) {
     file.print(formatted_local_time()); // Correct timestamp format
     file.print(",");
-    file.print(data, 2);
-    file.print(",");
-    file.println(severity); // Add newline at the end
+    file.println(data, 2);
+    // file.print(",");
+    // file.println(severity); // Add newline at the end
     file.close();
     Serial.println("Data logged to SD as CSV.");
   } else {
@@ -117,19 +117,19 @@ void logToSD(float data, String severity, String name) {
 
 ////////////MISSED DATES/////////////////
 
-void logToSDmissedDate(String date, String name) {
-  timeClient.update(); // Ensure time is current
+// void logToSDmissedDate(String date, String name) {
+//   timeClient.update(); // Ensure time is current
 
-  File file = SD.open(name, FILE_APPEND);
+//   File file = SD.open(name, FILE_APPEND);
 
-  if (file) {
-    file.print(date); // Correct timestamp format
-    Serial.println("Data logged to SD as CSV.");
-  } else {
-    Serial.println("Error opening file: " + name);
-  }
+//   if (file) {
+//     file.print(date); // Correct timestamp format
+//     Serial.println("Data logged to SD as CSV.");
+//   } else {
+//     Serial.println("Error opening file: " + name);
+//   }
 
-}
+// }
 
 /////////////HX711 initialization////////////////
 
@@ -219,15 +219,11 @@ void email_init() {
 
 //////////////////////EMAIL SENDING////////////////////////////////
 
-void send_email(String name, bool missed_date) {
+void send_email(String name) {
   SMTP_Message message;
   message.sender.name = "ESP32 CSV Sender";
   message.sender.email = AUTHOR_EMAIL;
-  if(missed_date){
-    message.subject = "CSV Data from ESP32 - Missed Date";
-  }else{
-    message.subject = "CSV Data from ESP32";
-  }
+  message.subject = "CSV Data from ESP32";
   
   message.addRecipient("Recipient", RECIPIENT_EMAIL);
 

@@ -103,14 +103,14 @@ extern bool missed_date;
 
 void wifiinit(); //wifi initialization 
 int thingspeaktransmit(int sensordata, int field);
-void logToSD(float data, String severity, String name); // Updated to include status
+void logToSD(float data,/* String severity,*/ String name); // Updated to include status
 String create_file(String formatteddate);
 void sdInit();
 void HX711_init();
 float get_strain(float baseline);
 float get_nominal_reading();
 void email_init();
-void send_email(String name, bool missed_date);
+void send_email(String name);
 void smtpCallback(SMTP_Status status);
 String formatted_local_time();
 String getFormattedDate();

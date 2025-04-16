@@ -112,10 +112,10 @@ void setup() {
   name = create_file(date);
 
   //create missed date file
-  create_file_missed_date();
+  // create_file_missed_date();
 
   //sleep timer
-  esp_sleep_enable_timer_wakeup(60*1000000);
+  esp_sleep_enable_timer_wakeup(1800*1000000);
 
 
 }
@@ -142,11 +142,11 @@ void loop(){
 
   data = get_strain(baseline);
 
-  logToSD(data, check_severity(data, baseline_strain), name);
+  logToSD(data, name);
 
-  if(/*getFormattedDate()*/String("2006-12-14") != date){ //String("2006-12-14") // this need to be changed to get_formatteddat(); so that email can be sent when the on new day
+  if(getFormattedDate() != date){ //String("2006-12-14") // this need to be changed to get_formatteddat(); so that email can be sent when the on new day
 
-    logToSD(data, check_severity(data, baseline_strain), name);
+    logToSD(data,/* check_severity(data, baseline_strain),*/ name);
 
     if(WiFi.status() == WL_CONNECTED){
       Serial.println("wifi connected for email");
@@ -154,11 +154,11 @@ void loop(){
       // if(date_missed){
       //   //open /missed_date.csv
       //   //loop through get dates missed and than also send emails of those files with
-      //   //
+      //   
       // }
-    }else //possibly get rid of this functionality too much work too little time
-      logToSDmissedDate(date,"/missed_date.csv");
-      date_missed = true;
+    }// }else //possibly get rid of this functionality too much work too little time
+    //   logToSDmissedDate(date,"/missed_date.csv");
+    //   date_missed = true;
 
     date = getFormattedDate();
     name = create_file(date);
