@@ -75,7 +75,7 @@ const float INITIAL_LENGTH = 1; //or x,y,z not sure
 ///////////STRAIN GUAGE DATA//////////////////
 #define GUAGE_FACTOR 2.0
 #define EXC_VOLT 2.24
-extern long baseline;
+extern float baseline;
 extern float rawToVoltage_theoretical;
 #define conversion_factor 1000000
 

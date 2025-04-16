@@ -98,7 +98,7 @@ void logToSD(float data, String severity, String name) {
 void HX711_init(){
 
   scale.begin(DATA_LINE,CLOCK_LINE);
-  scale.set_gain(64);
+  scale.set_gain(128);
   scale.set_scale();
   scale.tare();
   Serial.println("THE Hx711 is calibrated");
@@ -113,21 +113,22 @@ float get_nominal_reading(){
   Serial.println("starting nominal reading");
 
   if(scale.is_ready()){
+
     Serial.println("connected");
-    for(int i = 0; i < 5; i++){ //changing to 5 for now change back to 60 later
+    for(int i = 0; i < 10; i++){ //changing to 5 for now change back to 60 later
       nominal += scale.read_average(10);
-      delay(1000);
+      delay(500);
     }
   }else
     Serial.println("GUAGE NOT connected");
 
   
   Serial.println("nominal reading");
-  Serial.println(nominal/5,10);
+  Serial.println(nominal/10,10);
   Serial.println("Nominal reading taken");
-  Serial.println(nominal/5 * rawToVoltage_theoretical, 10);
+  Serial.println((nominal/10) * rawToVoltage_theoretical, 10);
 
-  return (nominal/5*rawToVoltage_theoretical);
+  return ((nominal/10)*rawToVoltage_theoretical);
 
 }
 
@@ -142,11 +143,19 @@ float get_strain(float baseline){
 
     float strain = 0;
     float new_voltage = 0;
+    Serial.println("original strain");
+    Serial.println(strain,10);
+
+    Serial.println("this is the baseline value passed in");
+    Serial.println(baseline,10);
 
     if(scale.is_ready()){
       new_voltage = scale.read_average(10)*rawToVoltage_theoretical;
-      strain = ((new_voltage-baseline)/EXC_VOLT)*conversion_factor*4/GAUGE_FACTOR;
-      return strain;
+      strain = ((new_voltage - baseline)/EXC_VOLT)*conversion_factor*4/GUAGE_FACTOR;
+      Serial.println("new voltage");
+      Serial.println(new_voltage,10);
+      Serial.println("strain measured");
+      Serial.println(strain,10);
     }else
       Serial.println("STRAIN GUAGE NOT CONNECTED");
 

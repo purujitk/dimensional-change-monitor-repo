@@ -14,6 +14,8 @@ client: Ingenium
 
 #include "function.h"
 
+#include <esp_sleep.h>
+
 
 WiFiClient client;
 WiFiUDP ntpUDP;
@@ -27,13 +29,14 @@ const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
 unsigned long CHANNEL_ID = 865189;
 
 unsigned long prev_time = 0;
-long baseline = 0;
+RTC_DATA_ATTR bool has_initialized = false;
+RTC_DATA_ATTR float baseline = 0;
 
 unsigned long time_dif = 0;
 
-String date = "";
-String name = "";
-float data =0;
+RTC_DATA_ATTR String date = "";
+RTC_DATA_ATTR String name = "";
+float data = 0;
 
 const float Vref   = 1.25;    // Internal reference voltage (typical)
 const float Gain   = 128.0;   // Amplifier gain for channel A
@@ -41,11 +44,12 @@ const float Vfs = Vref / Gain; // e.g., 1.25 / 128 = ~0.00977
 const long steps = 8388608;
 float rawToVoltage_theoretical = Vfs / steps;
 
+RTC_DATA_ATTR float baseline_strain;
+
 
 void setup() {
   //initializations
   Serial.begin(115200);
-  
   delay(500);
 
   //sleep mode implemintation needs to be worked on
@@ -95,7 +99,9 @@ void setup() {
   baseline = get_nominal_reading();
 
   //converting baseline voltage to baseline strain
-  float baseline_strain = (baseline/EXC_VOLT)*conversion_factor*4/GAUGE_FACTOR;
+  baseline_strain = (baseline/EXC_VOLT)*conversion_factor*4/GUAGE_FACTOR;
+  Serial.println("this is the baseline strain");
+  Serial.println(baseline_strain,10);
 
   //getting inital date
   date = getFormattedDate();
@@ -103,10 +109,12 @@ void setup() {
   //creating initial file
   name = create_file(date);
 
+  esp_sleep_enable_timer_wakeup(60*1000000);
+
 
 }
 
-void loop() {
+void loop(){
 
   timeClient.update();
 
@@ -117,39 +125,42 @@ void loop() {
     }
   }
 
-  time_dif = (timeClient.getEpochTime() - prev_time);
-  Serial.println("time dif is ");
-  Serial.println(time_dif);
+  // time_dif = (timeClient.getEpochTime() - prev_time);
+  // Serial.println("time dif is ");
+  // Serial.println(time_dif);
 
-  if (time_dif >= 60){ //should take readings every minute (This is for testing purposes actual thing should have greater interval)
+  // if (time_dif >= 60){ //should take readings every minute (This is for testing purposes actual thing should have greater interval)
 
-    prev_time = timeClient.getEpochTime();
+  // prev_time = timeClient.getEpochTime();
 
-    data = get_strain(baseline);
+  data = get_strain(baseline);
 
-    if(/*getFormattedDate()*/ String("2006-12-14") != date){
+  if(/*getFormattedDate()*/ String("2006-12-14") != date){
 
-      logToSD(data, check_severity(data, baseline_strain), name);
+    logToSD(data, check_severity(data, baseline_strain), name);
 
-      if(WiFi.status() == WL_CONNECTED){
-        Serial.println("wifi connected for email");
-        send_email(name);
-      }else
-        //we can store the date that could not be sent in an array possibly and then check to send that data later
+    if(WiFi.status() == WL_CONNECTED){
+      Serial.println("wifi connected for email");
+      send_email(name);
+    }//else
+      //we can store the date that could not be sent in an array possibly and then check to send that data later
 
-      date = getFormattedDate();
-      name = create_file(date);
+    date = getFormattedDate();
+    name = create_file(date);
 
-    }
-      
+  }
+  
+  Serial.println("going in to light sleep");
 
+  delay(1000);
 
-  }else
-    // //sleep for some time
-    // Serial.println("sleep section");
-    // esp_sleep_enable_timer_wakeup(60*1000000); // --> should set this to the intrval size
-    // esp_deep_sleep_start();
-    // Serial.println("out of sleep");
+  esp_light_sleep_start(); //should take a 60 second gap
+
+  Serial.println("woken up... starting loop again");
+
 
 }
+
+
+
 
