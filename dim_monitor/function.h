@@ -19,30 +19,11 @@ by: Purujit Kantiya
 #include <time.h>
 
 ////////////WIFI PARAMATERS//////////////
-#define WIFI_SSD "Purujit" //change depending on wifi client
-#define WIFI_PASS "PurujitK"
+#define WIFI_SSD //ENTER YOUR WIFIS USERNAME HERE
+#define WIFI_PASS //ENTER YOUR WIFI PASSWORD HERE
 
 extern WiFiClient client;
 extern WiFiUDP ntpUDP;
-
-// ////////////THINGSPEAK DATA/////////////
-extern const char* W_API_KEY;
-extern const char* R_API_KEY;
-extern unsigned long CHANNEL_ID;
-
-// #define CHANNEL_ID "2865189"
-// extern const char* W_API_KEY = "LG11PSUFXN66T3DA";
-// extern const char* R_API_KEY = "EMTZQ7KAPR04KHKB";
-// extern unsigned long CHANNEL_ID = 865189;
-
-#define SERVER "api.thingspeak.com"
-
-//THINGSPEAK ERROR CODES
-#define API_FAIL 404
-#define VAL_RANGE -101
-#define INV_FIELD -201
-#define SET_FIELD -210
-#define CONEC_FAIL -301
 
 ///////////SD CARD MOD////////////////
 #define SD_CS_PIN 5
@@ -64,14 +45,6 @@ extern HX711 scale;
 
 #define CALIBRATION_FACTOR 1
 
-////////////DIMENSIONAL DATA////////////////
-
-//THIS DATA WAS RECORDED UNDER STAP hopefully
-
-const float INITIAL_LENGTH = 1; //or x,y,z not sure
-// const float INITIAL_LENGTH_RAD = 0;
-// const float INITIAL_LENGTH_TANG = 0;
-
 ///////////STRAIN GUAGE DATA//////////////////
 #define GUAGE_FACTOR 2.0
 #define EXC_VOLT 2.24
@@ -89,9 +62,7 @@ extern float rawToVoltage_theoretical;
 #define AUTHOR_PASSWORD "vpqthieieiwmsoqn"
 
 /* Recipient's email*/
-// #define RECIPIENT_EMAIL "rogers.hannahrose@gmail.com"
-#define RECIPIENT_EMAIL "purujitkantiya@gmail.com"
-
+#define RECIPIENT_EMAIL //DEFINE YOUR EMAIL HERE
 
 extern SMTPSession smtp;
 extern Session_Config config;
@@ -102,7 +73,6 @@ extern bool missed_date;
 ///////////function initialization////////////
 
 void wifiinit(); //wifi initialization 
-int thingspeaktransmit(int sensordata, int field);
 void logToSD(float data,/* String severity,*/ String name); // Updated to include status
 String create_file(String formatteddate);
 void sdInit();

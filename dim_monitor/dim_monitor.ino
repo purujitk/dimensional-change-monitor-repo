@@ -7,13 +7,7 @@ Dimensional change monitor main script for APSC 103 project
 
 client: Ingenium
 */
-
-//THINGSPEAK TRANSIMISSION RATE IS MINIMUM 15 SECONDS!!!!
-//HAVE TO WAIT FIFTEEN SECONDS BEFORE TRANSMITTING FOR A SECONDS TIME
-
-
 #include "function.h"
-
 #include <esp_sleep.h>
 
 
@@ -53,16 +47,6 @@ void setup() {
   //initializations
   Serial.begin(115200);
   delay(500);
-
-  //sleep mode implemintation needs to be worked on
-  // esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-
-  //for sleep wakup --> want to skip the setup after wakeup
-  // if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
-  //   Serial.println("Woke up from deep sleep. Skipping setup...");
-  //   return;  // Skip rest of setup if woke up from sleep
-  // }else 
-  //   Serial.println(wakeup_reason);
 
   //initialize wifi
   wifiinit();
@@ -132,14 +116,6 @@ void loop(){
     }
   }
 
-  // time_dif = (timeClient.getEpochTime() - prev_time);
-  // Serial.println("time dif is ");
-  // Serial.println(time_dif);
-
-  // if (time_dif >= 60){ //should take readings every minute (This is for testing purposes actual thing should have greater interval)
-
-  // prev_time = timeClient.getEpochTime();
-
   data = get_strain(baseline);
 
   logToSD(data, name);
@@ -151,14 +127,7 @@ void loop(){
     if(WiFi.status() == WL_CONNECTED){
       Serial.println("wifi connected for email");
       send_email(name);
-      // if(date_missed){
-      //   //open /missed_date.csv
-      //   //loop through get dates missed and than also send emails of those files with
-      //   
-      // }
-    }// }else //possibly get rid of this functionality too much work too little time
-    //   logToSDmissedDate(date,"/missed_date.csv");
-    //   date_missed = true;
+    }
 
     date = getFormattedDate();
     name = create_file(date);

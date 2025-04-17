@@ -28,15 +28,6 @@ void wifiinit(){
 
 }
 
-///////////thingspeak transmission///////////// PROBABLY NOT GOING TO USE NOW WE JUST WANT TO SEND TO EMAIL ERIN
-
-int thingspeaktransmit(int sensordata, int field){
-
-  int status = ThingSpeak.writeField(CHANNEL_ID, field, sensordata, W_API_KEY);
-
-  return status;
-}
-
 //////////sd card reader initialization//////////////
 
 void sdInit() {
